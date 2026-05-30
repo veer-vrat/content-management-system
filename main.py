@@ -319,12 +319,37 @@ def view_sentence(request: Request, sid: int, msg: str = ""):
     exposures = db.execute("SELECT * FROM exposure WHERE sentence_id=? ORDER BY tier, sort_order, id", (sid,)).fetchall()
     resolutions = db.execute("SELECT * FROM resolution WHERE sentence_id=? ORDER BY sort_order, id", (sid,)).fetchall()
     challenges = db.execute("SELECT * FROM challenge WHERE sentence_id=? ORDER BY id", (sid,)).fetchall()
+    linked_weaknesses = db.execute("""
+        SELECT w.* FROM weakness w
+        JOIN sentence_weakness sw ON sw.weakness_id = w.id
+        WHERE sw.sentence_id = ? ORDER BY w.name_en
+    """, (sid,)).fetchall()
+    all_weaknesses = db.execute("SELECT * FROM weakness ORDER BY category, name_en").fetchall()
     db.close()
     return templates.TemplateResponse(request, "sentence_detail.html", {
         "sentence": sentence,
         "exposures": exposures, "resolutions": resolutions, "challenges": challenges,
+        "linked_weaknesses": linked_weaknesses, "all_weaknesses": all_weaknesses,
         "msg": msg
     })
+
+
+@app.post("/sentences/{sid}/link-weakness")
+def link_weakness(sid: int, weakness_id: int = Form(...)):
+    db = get_db()
+    db.execute("INSERT OR IGNORE INTO sentence_weakness (sentence_id, weakness_id) VALUES (?, ?)", (sid, weakness_id))
+    db.commit()
+    db.close()
+    return RedirectResponse(f"/sentences/{sid}?msg=Weakness+linked", status_code=303)
+
+
+@app.post("/sentences/{sid}/unlink-weakness/{wid}")
+def unlink_weakness(sid: int, wid: int):
+    db = get_db()
+    db.execute("DELETE FROM sentence_weakness WHERE sentence_id=? AND weakness_id=?", (sid, wid))
+    db.commit()
+    db.close()
+    return RedirectResponse(f"/sentences/{sid}?msg=Unlinked", status_code=303)
 
 
 @app.post("/sentences/{sid}/edit-meta")

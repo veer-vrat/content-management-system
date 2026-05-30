@@ -77,6 +77,12 @@ def init_db():
             description   TEXT,
             duration_days INTEGER
         );
+
+        CREATE TABLE IF NOT EXISTS sentence_weakness (
+            sentence_id INTEGER NOT NULL REFERENCES sentence(id) ON DELETE CASCADE,
+            weakness_id INTEGER NOT NULL REFERENCES weakness(id) ON DELETE CASCADE,
+            PRIMARY KEY (sentence_id, weakness_id)
+        );
     """)
 
     conn.commit()

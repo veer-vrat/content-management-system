@@ -23,18 +23,32 @@ def seed_erc():
     c.execute("DELETE FROM exposure")
     c.execute("DELETE FROM resolution")
     c.execute("DELETE FROM challenge")
+    c.execute("DELETE FROM sentence_weakness")
     c.execute("UPDATE sentence SET source_file = NULL, notes = NULL")
     conn.commit()
 
-    # sentence_erc_meta → update source_file and notes on sentence rows
+    # sentence_erc_meta → update source_file/notes and seed sentence_weakness
     with open(DATA_PATH / "sentence_erc_meta.csv", newline="", encoding="utf-8") as f:
         for row in csv.DictReader(f):
             sid = lookup_sentence(c, row["sentence_text_en"])
-            if sid:
-                c.execute(
-                    "UPDATE sentence SET source_file = ?, notes = ? WHERE id = ?",
-                    (row.get("source_file", "").strip(), row.get("notes", "").strip(), sid),
-                )
+            if not sid:
+                continue
+            c.execute(
+                "UPDATE sentence SET source_file = ?, notes = ? WHERE id = ?",
+                (row.get("source_file", "").strip(), row.get("notes", "").strip(), sid),
+            )
+            for wname in row.get("weakness_names", "").split("|"):
+                wname = wname.strip()
+                if not wname:
+                    continue
+                wrow = c.execute("SELECT id FROM weakness WHERE name_en = ?", (wname,)).fetchone()
+                if wrow:
+                    c.execute(
+                        "INSERT OR IGNORE INTO sentence_weakness (sentence_id, weakness_id) VALUES (?, ?)",
+                        (sid, wrow[0]),
+                    )
+                else:
+                    print(f"  WARNING: weakness not found: {wname!r}")
 
     with open(DATA_PATH / "exposures.csv", newline="", encoding="utf-8") as f:
         for row in csv.DictReader(f):
@@ -84,7 +98,7 @@ def seed_erc():
 
     conn.commit()
 
-    for table in ["exposure", "resolution", "challenge"]:
+    for table in ["exposure", "resolution", "challenge", "sentence_weakness"]:
         n = conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
         print(f"  {table}: {n} rows")
     n = conn.execute("SELECT COUNT(*) FROM sentence WHERE source_file IS NOT NULL").fetchone()[0]

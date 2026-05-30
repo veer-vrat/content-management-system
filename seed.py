@@ -44,7 +44,7 @@ def seed():
     # ── Weakness ↔ Subvirtue links ───────────────────────────
     with open(DATA_PATH / "weakness_subvirtues.csv", newline="", encoding="utf-8") as f:
         for row in csv.DictReader(f):
-            wname = row["lacuna_name_en"].strip()
+            wname = row["weakness_name_en"].strip()
             svname = row["subvirtue_name_en"].strip()
             priority = int(row.get("priority", 0) or 0)
             wid = c.execute("SELECT id FROM weakness WHERE name_en = ?", (wname,)).fetchone()

@@ -31,6 +31,36 @@
   </form>
 </div>
 
+<!-- Weakness tags -->
+<div class="form-card">
+  <h3>Weaknesses addressed</h3>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+    {% for w in linked_weaknesses %}
+    <span class="badge badge-national" style="display:inline-flex;align-items:center;gap:6px;">
+      {{ w.name_en }}
+      <form method="post" action="/sentences/{{ sentence.id }}/unlink-weakness/{{ w.id }}" style="display:inline;margin:0;">
+        <button type="submit" style="background:none;border:none;cursor:pointer;color:inherit;font-size:12px;padding:0;line-height:1;" title="Remove">×</button>
+      </form>
+    </span>
+    {% else %}
+    <span style="color:var(--muted);font-size:13px;">No weaknesses tagged yet.</span>
+    {% endfor %}
+  </div>
+  <form method="post" action="/sentences/{{ sentence.id }}/link-weakness">
+    <div class="form-row">
+      <div class="field">
+        <select name="weakness_id" required>
+          <option value="">— add weakness —</option>
+          {% for w in all_weaknesses %}
+          <option value="{{ w.id }}">[{{ w.category }}] {{ w.name_en }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-sm btn-primary">Link</button>
+    </div>
+  </form>
+</div>
+
 <!-- ═══ EXPOSURES ═══ -->
 <div class="section-head">
   <h2>Exposures <span class="badge badge-local" style="margin-left:8px;">{{ exposures | length }}</span></h2>
