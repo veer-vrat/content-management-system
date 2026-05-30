@@ -1,0 +1,7 @@
+__pycache__
+*.pyc
+*.pyo
+.env
+seed.py
+seed_erc.py
+data/
