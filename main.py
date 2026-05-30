@@ -221,7 +221,7 @@ def unlink_subvirtue(wid: int, svid: int):
 # ═══════════════════════════════════════════════
 
 @app.get("/sentences", response_class=HTMLResponse)
-def list_sentences(request: Request, subvirtue_id: Optional[int] = None, msg: str = ""):
+def list_sentences(request: Request, virtue_id: Optional[int] = None, subvirtue_id: Optional[int] = None, msg: str = ""):
     db = get_db()
     if subvirtue_id:
         sentences = db.execute("""
@@ -229,47 +229,76 @@ def list_sentences(request: Request, subvirtue_id: Optional[int] = None, msg: st
             JOIN subvirtue sv ON sv.id = s.subvirtue_id
             WHERE s.subvirtue_id = ? ORDER BY s.id
         """, (subvirtue_id,)).fetchall()
+    elif virtue_id:
+        sentences = db.execute("""
+            SELECT s.*, sv.name_en AS subvirtue_name FROM sentence s
+            JOIN subvirtue sv ON sv.id = s.subvirtue_id
+            WHERE sv.virtue_id = ? ORDER BY s.id
+        """, (virtue_id,)).fetchall()
     else:
         sentences = db.execute("""
             SELECT s.*, sv.name_en AS subvirtue_name FROM sentence s
             JOIN subvirtue sv ON sv.id = s.subvirtue_id
             ORDER BY s.id
         """).fetchall()
-    subvirtues = db.execute("SELECT * FROM subvirtue ORDER BY id").fetchall()
+    virtues = db.execute("SELECT * FROM virtue ORDER BY id").fetchall()
+    # subvirtues scoped to selected virtue, or all
+    if virtue_id:
+        subvirtues = db.execute("SELECT * FROM subvirtue WHERE virtue_id = ? ORDER BY id", (virtue_id,)).fetchall()
+    else:
+        subvirtues = db.execute("SELECT * FROM subvirtue ORDER BY id").fetchall()
     db.close()
     return templates.TemplateResponse(request, "sentences.html", {
         "sentences": sentences,
-        "subvirtues": subvirtues, "filter_svid": subvirtue_id, "msg": msg
+        "virtues": virtues, "subvirtues": subvirtues,
+        "filter_vid": virtue_id, "filter_svid": subvirtue_id, "msg": msg
     })
 
 
 @app.post("/sentences/new")
-def create_sentence(text_en: str = Form(...), text_mr: str = Form(""), subvirtue_id: int = Form(...)):
+def create_sentence(
+    text_en: str = Form(...), text_mr: str = Form(""), subvirtue_id: int = Form(...),
+    virtue_id: Optional[int] = None, subvirtue_id_filter: Optional[int] = None
+):
     db = get_db()
     db.execute("INSERT INTO sentence (text_en, text_mr, subvirtue_id) VALUES (?, ?, ?)", (text_en.strip(), text_mr.strip(), subvirtue_id))
     db.commit()
+    # resolve virtue_id from subvirtue if not passed
+    if not virtue_id:
+        row = db.execute("SELECT virtue_id FROM subvirtue WHERE id=?", (subvirtue_id,)).fetchone()
+        virtue_id = row["virtue_id"] if row else None
     db.close()
-    return RedirectResponse(f"/sentences?subvirtue_id={subvirtue_id}&msg=Sentence+added", status_code=303)
+    return RedirectResponse(f"/sentences?virtue_id={virtue_id or ''}&subvirtue_id={subvirtue_id}&msg=Sentence+added", status_code=303)
 
 
 @app.post("/sentences/{sid}/edit")
-def edit_sentence(sid: int, text_en: str = Form(...), text_mr: str = Form(""), subvirtue_id: int = Form(...)):
+def edit_sentence(
+    sid: int, text_en: str = Form(...), text_mr: str = Form(""), subvirtue_id: int = Form(...),
+    virtue_id: Optional[int] = None
+):
     db = get_db()
     db.execute("UPDATE sentence SET text_en=?, text_mr=?, subvirtue_id=? WHERE id=?", (text_en.strip(), text_mr.strip(), subvirtue_id, sid))
     db.commit()
+    if not virtue_id:
+        row = db.execute("SELECT virtue_id FROM subvirtue WHERE id=?", (subvirtue_id,)).fetchone()
+        virtue_id = row["virtue_id"] if row else None
     db.close()
-    return RedirectResponse(f"/sentences?subvirtue_id={subvirtue_id}&msg=Saved", status_code=303)
+    return RedirectResponse(f"/sentences?virtue_id={virtue_id or ''}&subvirtue_id={subvirtue_id}&msg=Saved", status_code=303)
 
 
 @app.post("/sentences/{sid}/delete")
 def delete_sentence(sid: int):
     db = get_db()
-    row = db.execute("SELECT subvirtue_id FROM sentence WHERE id=?", (sid,)).fetchone()
+    row = db.execute("""
+        SELECT s.subvirtue_id, sv.virtue_id FROM sentence s
+        JOIN subvirtue sv ON sv.id = s.subvirtue_id WHERE s.id=?
+    """, (sid,)).fetchone()
     svid = row["subvirtue_id"] if row else ""
+    vid = row["virtue_id"] if row else ""
     db.execute("DELETE FROM sentence WHERE id=?", (sid,))
     db.commit()
     db.close()
-    return RedirectResponse(f"/sentences?subvirtue_id={svid}&msg=Deleted", status_code=303)
+    return RedirectResponse(f"/sentences?virtue_id={vid}&subvirtue_id={svid}&msg=Deleted", status_code=303)
 
 
 # ═══════════════════════════════════════════════

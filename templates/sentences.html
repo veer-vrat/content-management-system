@@ -6,19 +6,30 @@
   <p>Test sentences belonging to subvirtues.</p>
 </div>
 
-<!-- Filter -->
-<div style="margin-bottom:20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-  <span style="font-family:var(--mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">Filter by subvirtue</span>
-  <a href="/sentences" class="btn btn-sm {% if not filter_svid %}btn-primary{% endif %}">All</a>
-  {% for sv in subvirtues %}
-  <a href="/sentences?subvirtue_id={{ sv.id }}" class="btn btn-sm {% if filter_svid == sv.id %}btn-primary{% endif %}">{{ sv.name_en }}</a>
+<!-- Filter: Virtue -->
+<div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+  <span style="font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;min-width:48px;">Virtue</span>
+  <a href="/sentences" class="btn btn-sm {% if not filter_vid and not filter_svid %}btn-primary{% endif %}">All</a>
+  {% for v in virtues %}
+  <a href="/sentences?virtue_id={{ v.id }}" class="btn btn-sm {% if filter_vid == v.id %}btn-primary{% endif %}">{{ v.name_en }}</a>
   {% endfor %}
 </div>
+
+<!-- Filter: Subvirtue (visible only when a virtue is selected) -->
+{% if filter_vid or filter_svid %}
+<div style="margin-bottom:20px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding-left:56px;">
+  <span style="font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;min-width:0;">Subvirtue</span>
+  <a href="/sentences?virtue_id={{ filter_vid }}" class="btn btn-sm {% if not filter_svid %}btn-primary{% endif %}">All</a>
+  {% for sv in subvirtues %}
+  <a href="/sentences?virtue_id={{ filter_vid }}&subvirtue_id={{ sv.id }}" class="btn btn-sm {% if filter_svid == sv.id %}btn-primary{% endif %}">{{ sv.name_en }}</a>
+  {% endfor %}
+</div>
+{% endif %}
 
 <!-- Add sentence -->
 <div class="form-card">
   <h3>Add sentence</h3>
-  <form method="post" action="/sentences/new">
+  <form method="post" action="/sentences/new?virtue_id={{ filter_vid or '' }}&subvirtue_id={{ filter_svid or '' }}">
     <div class="form-row">
       <div class="field field-full"><label>Text (English)</label><input name="text_en" required placeholder="I acknowledge my limitations honestly..."></div>
       <div class="field field-full"><label>Text (Marathi)</label><input name="text_mr" placeholder="Marathi translation..."></div>
