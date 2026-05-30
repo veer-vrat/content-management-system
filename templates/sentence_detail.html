@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}{{ sentence.text_en[:60] }}… — Veervrat CMS{% endblock %}
+{% block content %}
+
+<div style="margin-bottom:24px;">
+  <a href="/sentences?virtue_id={{ sentence.virtue_id }}&subvirtue_id={{ sentence.subvirtue_id }}" class="btn btn-sm">← Sentences</a>
+</div>
+
+{% if msg %}
+<div class="flash">{{ msg }}</div>
+{% endif %}
+
+<div class="page-head">
+  <h1 style="font-size:20px;line-height:1.4;">{{ sentence.text_en }}</h1>
+  <p>
+    <span class="badge">{{ sentence.subvirtue_name }}</span>
+    <span style="color:var(--muted);font-size:13px;margin-left:8px;">{{ sentence.virtue_name }}</span>
+    {% if sentence.text_mr %}<span style="color:var(--muted);font-size:13px;margin-left:12px;">{{ sentence.text_mr }}</span>{% endif %}
+  </p>
+</div>
+
+<!-- Source/Notes meta -->
+<div class="form-card">
+  <h3>Traceability</h3>
+  <form method="post" action="/sentences/{{ sentence.id }}/edit-meta">
+    <div class="form-row">
+      <div class="field field-full"><label>Source file</label><input name="source_file" value="{{ sentence.source_file or '' }}" placeholder="e.g. Problem33_Initiative_Plan (1).txt"></div>
+      <div class="field field-full"><label>Notes</label><input name="notes" value="{{ sentence.notes or '' }}" placeholder="Context, problem number, weakness..."></div>
+      <button type="submit" class="btn btn-sm btn-primary">Save</button>
+    </div>
+  </form>
+</div>
+
+<!-- ═══ EXPOSURES ═══ -->
+<div class="section-head">
+  <h2>Exposures <span class="badge badge-local" style="margin-left:8px;">{{ exposures | length }}</span></h2>
+</div>
+
+{% for e in exposures %}
+<div class="item-card">
+  <div class="item-top">
+    <div>
+      <span class="badge badge-{{ e.tier }}">{{ e.tier }}</span>
+      <span class="item-title" style="margin-left:8px;">{{ e.title }}</span>
+      {% if e.sort_order %}<span style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:8px;">#{{ e.sort_order }}</span>{% endif %}
+      {% if e.description %}<div class="item-desc">{{ e.description }}</div>{% endif %}
+    </div>
+    <div class="item-actions">
+      <button class="btn btn-sm" onclick="toggleEdit('e{{ e.id }}')">Edit</button>
+      <form method="post" action="/sentences/{{ sentence.id }}/exposures/{{ e.id }}/delete" style="display:inline" onsubmit="return confirm('Delete?')">
+        <button type="submit" class="btn btn-sm btn-danger">Del</button>
+      </form>
+    </div>
+  </div>
+  <form method="post" action="/sentences/{{ sentence.id }}/exposures/{{ e.id }}/edit" class="edit-form" id="e{{ e.id }}">
+    <div class="form-row">
+      <div class="field" style="flex:2;"><label>Title</label><input name="title" value="{{ e.title }}" required></div>
+      <div class="field"><label>Tier</label>
+        <select name="tier">
+          <option value="local" {% if e.tier=='local' %}selected{% endif %}>Local</option>
+          <option value="national" {% if e.tier=='national' %}selected{% endif %}>National</option>
+          <option value="international" {% if e.tier=='international' %}selected{% endif %}>International</option>
+        </select>
+      </div>
+      <div class="field" style="max-width:80px;"><label>Order</label><input name="sort_order" type="number" value="{{ e.sort_order }}"></div>
+    </div>
+    <div class="form-row" style="margin-top:8px;">
+      <div class="field field-full"><label>Description</label><textarea name="description">{{ e.description or '' }}</textarea></div>
+    </div>
+    <div style="margin-top:8px;display:flex;gap:8px;">
+      <button type="submit" class="btn btn-sm btn-primary">Save</button>
+      <button type="button" class="btn btn-sm" onclick="toggleEdit('e{{ e.id }}')">Cancel</button>
+    </div>
+  </form>
+</div>
+{% endfor %}
+
+<div class="form-card">
+  <h3>Add exposure</h3>
+  <form method="post" action="/sentences/{{ sentence.id }}/exposures/new">
+    <div class="form-row">
+      <div class="field" style="flex:2;"><label>Title</label><input name="title" required placeholder="e.g. Travel to unfamiliar city without GPS"></div>
+      <div class="field"><label>Tier</label>
+        <select name="tier"><option value="local">Local</option><option value="national">National</option><option value="international">International</option></select>
+      </div>
+      <div class="field" style="max-width:80px;"><label>Order</label><input name="sort_order" type="number" value="{{ exposures | length + 1 }}"></div>
+    </div>
+    <div class="form-row" style="margin-top:8px;">
+      <div class="field field-full"><label>Description</label><textarea name="description" placeholder="Detailed description of the exposure..."></textarea></div>
+    </div>
+    <div style="margin-top:8px;"><button type="submit" class="btn btn-primary">Add exposure</button></div>
+  </form>
+</div>
+
+<!-- ═══ RESOLUTIONS ═══ -->
+<div class="section-head">
+  <h2>Resolutions <span class="badge badge-national" style="margin-left:8px;">{{ resolutions | length }}</span></h2>
+</div>
+
+{% for r in resolutions %}
+<div class="item-card">
+  <div class="item-top">
+    <div>
+      <span class="item-title">{{ r.title }}</span>
+      {% if r.duration_weeks %}<span class="badge" style="margin-left:8px;">{{ r.duration_weeks }}w</span>{% endif %}
+      {% if r.sort_order %}<span style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:8px;">#{{ r.sort_order }}</span>{% endif %}
+      {% if r.description %}<div class="item-desc">{{ r.description }}</div>{% endif %}
+    </div>
+    <div class="item-actions">
+      <button class="btn btn-sm" onclick="toggleEdit('r{{ r.id }}')">Edit</button>
+      <form method="post" action="/sentences/{{ sentence.id }}/resolutions/{{ r.id }}/delete" style="display:inline" onsubmit="return confirm('Delete?')">
+        <button type="submit" class="btn btn-sm btn-danger">Del</button>
+      </form>
+    </div>
+  </div>
+  <form method="post" action="/sentences/{{ sentence.id }}/resolutions/{{ r.id }}/edit" class="edit-form" id="r{{ r.id }}">
+    <div class="form-row">
+      <div class="field" style="flex:2;"><label>Title</label><input name="title" value="{{ r.title }}" required></div>
+      <div class="field" style="max-width:100px;"><label>Duration (weeks)</label><input name="duration_weeks" type="number" value="{{ r.duration_weeks or '' }}"></div>
+      <div class="field" style="max-width:80px;"><label>Order</label><input name="sort_order" type="number" value="{{ r.sort_order }}"></div>
+    </div>
+    <div class="form-row" style="margin-top:8px;">
+      <div class="field field-full"><label>Description</label><textarea name="description">{{ r.description or '' }}</textarea></div>
+    </div>
+    <div style="margin-top:8px;display:flex;gap:8px;">
+      <button type="submit" class="btn btn-sm btn-primary">Save</button>
+      <button type="button" class="btn btn-sm" onclick="toggleEdit('r{{ r.id }}')">Cancel</button>
+    </div>
+  </form>
+</div>
+{% endfor %}
+
+<div class="form-card">
+  <h3>Add resolution</h3>
+  <form method="post" action="/sentences/{{ sentence.id }}/resolutions/new">
+    <div class="form-row">
+      <div class="field" style="flex:2;"><label>Title</label><input name="title" required placeholder="e.g. 3-decision autopsy each evening"></div>
+      <div class="field" style="max-width:100px;"><label>Duration (weeks)</label><input name="duration_weeks" type="number" placeholder="4"></div>
+      <div class="field" style="max-width:80px;"><label>Order</label><input name="sort_order" type="number" value="{{ resolutions | length + 1 }}"></div>
+    </div>
+    <div class="form-row" style="margin-top:8px;">
+      <div class="field field-full"><label>Description</label><textarea name="description" placeholder="Detailed description..."></textarea></div>
+    </div>
+    <div style="margin-top:8px;"><button type="submit" class="btn btn-primary">Add resolution</button></div>
+  </form>
+</div>
+
+<!-- ═══ CHALLENGES ═══ -->
+<div class="section-head">
+  <h2>Challenge <span class="badge badge-international" style="margin-left:8px;">{{ challenges | length }}</span></h2>
+</div>
+
+{% for ch in challenges %}
+<div class="item-card">
+  <div class="item-top">
+    <div>
+      <span class="item-title">{{ ch.title }}</span>
+      {% if ch.duration_days %}<span class="badge" style="margin-left:8px;">{{ ch.duration_days }} days</span>{% endif %}
+      {% if ch.description %}<div class="item-desc">{{ ch.description }}</div>{% endif %}
+    </div>
+    <div class="item-actions">
+      <button class="btn btn-sm" onclick="toggleEdit('ch{{ ch.id }}')">Edit</button>
+      <form method="post" action="/sentences/{{ sentence.id }}/challenges/{{ ch.id }}/delete" style="display:inline" onsubmit="return confirm('Delete?')">
+        <button type="submit" class="btn btn-sm btn-danger">Del</button>
+      </form>
+    </div>
+  </div>
+  <form method="post" action="/sentences/{{ sentence.id }}/challenges/{{ ch.id }}/edit" class="edit-form" id="ch{{ ch.id }}">
+    <div class="form-row">
+      <div class="field" style="flex:2;"><label>Title</label><input name="title" value="{{ ch.title }}" required></div>
+      <div class="field" style="max-width:110px;"><label>Duration (days)</label><input name="duration_days" type="number" value="{{ ch.duration_days or '' }}"></div>
+    </div>
+    <div class="form-row" style="margin-top:8px;">
+      <div class="field field-full"><label>Description</label><textarea name="description">{{ ch.description or '' }}</textarea></div>
+    </div>
+    <div style="margin-top:8px;display:flex;gap:8px;">
+      <button type="submit" class="btn btn-sm btn-primary">Save</button>
+      <button type="button" class="btn btn-sm" onclick="toggleEdit('ch{{ ch.id }}')">Cancel</button>
+    </div>
+  </form>
+</div>
+{% endfor %}
+
+{% if challenges | length == 0 %}
+<div class="form-card">
+  <h3>Add challenge</h3>
+  <form method="post" action="/sentences/{{ sentence.id }}/challenges/new">
+    <div class="form-row">
+      <div class="field" style="flex:2;"><label>Title</label><input name="title" required placeholder="e.g. 90-day public conviction ledger"></div>
+      <div class="field" style="max-width:110px;"><label>Duration (days)</label><input name="duration_days" type="number" placeholder="90"></div>
+    </div>
+    <div class="form-row" style="margin-top:8px;">
+      <div class="field field-full"><label>Description</label><textarea name="description" placeholder="What must the user do and demonstrate to complete this challenge?"></textarea></div>
+    </div>
+    <div style="margin-top:8px;"><button type="submit" class="btn btn-primary">Add challenge</button></div>
+  </form>
+</div>
+{% endif %}
+
+<script>function toggleEdit(id){document.getElementById(id).classList.toggle('open');}</script>
+{% endblock %}

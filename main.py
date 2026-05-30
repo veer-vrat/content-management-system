@@ -29,7 +29,7 @@ def data_model(request: Request):
     db = get_db()
     counts = {
         t: db.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
-        for t in ["virtue", "subvirtue", "weakness", "sentence", "plan", "exposure", "resolution", "challenge"]
+        for t in ["virtue", "subvirtue", "weakness", "sentence", "exposure", "resolution", "challenge"]
     }
     db.close()
     return templates.TemplateResponse(request, "data_model.html", {"counts": counts})
@@ -223,24 +223,23 @@ def unlink_subvirtue(wid: int, svid: int):
 @app.get("/sentences", response_class=HTMLResponse)
 def list_sentences(request: Request, virtue_id: Optional[int] = None, subvirtue_id: Optional[int] = None, msg: str = ""):
     db = get_db()
+    erc_q = """
+        SELECT s.*, sv.name_en AS subvirtue_name,
+               COUNT(DISTINCT e.id) AS exp_count,
+               COUNT(DISTINCT r.id) AS res_count,
+               COUNT(DISTINCT ch.id) AS cha_count
+        FROM sentence s
+        JOIN subvirtue sv ON sv.id = s.subvirtue_id
+        LEFT JOIN exposure e ON e.sentence_id = s.id
+        LEFT JOIN resolution r ON r.sentence_id = s.id
+        LEFT JOIN challenge ch ON ch.sentence_id = s.id
+    """
     if subvirtue_id:
-        sentences = db.execute("""
-            SELECT s.*, sv.name_en AS subvirtue_name FROM sentence s
-            JOIN subvirtue sv ON sv.id = s.subvirtue_id
-            WHERE s.subvirtue_id = ? ORDER BY s.id
-        """, (subvirtue_id,)).fetchall()
+        sentences = db.execute(erc_q + " WHERE s.subvirtue_id = ? GROUP BY s.id ORDER BY s.id", (subvirtue_id,)).fetchall()
     elif virtue_id:
-        sentences = db.execute("""
-            SELECT s.*, sv.name_en AS subvirtue_name FROM sentence s
-            JOIN subvirtue sv ON sv.id = s.subvirtue_id
-            WHERE sv.virtue_id = ? ORDER BY s.id
-        """, (virtue_id,)).fetchall()
+        sentences = db.execute(erc_q + " WHERE sv.virtue_id = ? GROUP BY s.id ORDER BY s.id", (virtue_id,)).fetchall()
     else:
-        sentences = db.execute("""
-            SELECT s.*, sv.name_en AS subvirtue_name FROM sentence s
-            JOIN subvirtue sv ON sv.id = s.subvirtue_id
-            ORDER BY s.id
-        """).fetchall()
+        sentences = db.execute(erc_q + " GROUP BY s.id ORDER BY s.id").fetchall()
     virtues = db.execute("SELECT * FROM virtue ORDER BY id").fetchall()
     # subvirtues scoped to selected virtue, or all
     if virtue_id:
@@ -302,190 +301,130 @@ def delete_sentence(sid: int):
 
 
 # ═══════════════════════════════════════════════
-# PLANS (Exposure/Resolution/Challenge container)
+# SENTENCE DETAIL (ERC — Exposure/Resolution/Challenge)
 # ═══════════════════════════════════════════════
 
-@app.get("/plans", response_class=HTMLResponse)
-def list_plans(request: Request, msg: str = ""):
+@app.get("/sentences/{sid}", response_class=HTMLResponse)
+def view_sentence(request: Request, sid: int, msg: str = ""):
     db = get_db()
-    plans = db.execute("""
-        SELECT p.*,
-               v.name_en AS virtue_name,
-               w.name_en AS weakness_name,
-               COUNT(DISTINCT e.id) AS exp_count,
-               COUNT(DISTINCT r.id) AS res_count,
-               COUNT(DISTINCT ch.id) AS cha_count
-        FROM plan p
-        LEFT JOIN virtue v ON v.id = p.virtue_id
-        LEFT JOIN weakness w ON w.id = p.weakness_id
-        LEFT JOIN exposure e ON e.plan_id = p.id
-        LEFT JOIN resolution r ON r.plan_id = p.id
-        LEFT JOIN challenge ch ON ch.plan_id = p.id
-        GROUP BY p.id ORDER BY p.id
-    """).fetchall()
-    virtues = db.execute("SELECT * FROM virtue ORDER BY id").fetchall()
-    weaknesses = db.execute("SELECT * FROM weakness ORDER BY id").fetchall()
-    db.close()
-    return templates.TemplateResponse(request, "plans.html", {
-        "plans": plans,
-        "virtues": virtues, "weaknesses": weaknesses, "msg": msg
-    })
-
-
-@app.post("/plans/new")
-def create_plan(
-    title: str = Form(...), framing: str = Form(""),
-    virtue_id: Optional[int] = Form(None), weakness_id: Optional[int] = Form(None),
-    source_file: str = Form(""), notes: str = Form("")
-):
-    db = get_db()
-    db.execute(
-        "INSERT INTO plan (title, framing, virtue_id, weakness_id, source_file, notes) VALUES (?, ?, ?, ?, ?, ?)",
-        (title.strip(), framing.strip(), virtue_id or None, weakness_id or None, source_file.strip(), notes.strip())
-    )
-    db.commit()
-    db.close()
-    return RedirectResponse("/plans?msg=Plan+created", status_code=303)
-
-
-@app.get("/plans/{pid}", response_class=HTMLResponse)
-def view_plan(request: Request, pid: int, msg: str = ""):
-    db = get_db()
-    plan = db.execute("""
-        SELECT p.*, v.name_en AS virtue_name, w.name_en AS weakness_name
-        FROM plan p
-        LEFT JOIN virtue v ON v.id = p.virtue_id
-        LEFT JOIN weakness w ON w.id = p.weakness_id
-        WHERE p.id = ?
-    """, (pid,)).fetchone()
-    if not plan:
+    sentence = db.execute("""
+        SELECT s.*, sv.name_en AS subvirtue_name, v.name_en AS virtue_name, v.id AS virtue_id
+        FROM sentence s
+        JOIN subvirtue sv ON sv.id = s.subvirtue_id
+        JOIN virtue v ON v.id = sv.virtue_id
+        WHERE s.id = ?
+    """, (sid,)).fetchone()
+    if not sentence:
         raise HTTPException(404)
-    exposures = db.execute("SELECT * FROM exposure WHERE plan_id=? ORDER BY sort_order, id", (pid,)).fetchall()
-    resolutions = db.execute("SELECT * FROM resolution WHERE plan_id=? ORDER BY sort_order, id", (pid,)).fetchall()
-    challenges = db.execute("SELECT * FROM challenge WHERE plan_id=?", (pid,)).fetchall()
-    virtues = db.execute("SELECT * FROM virtue ORDER BY id").fetchall()
-    weaknesses = db.execute("SELECT * FROM weakness ORDER BY id").fetchall()
+    exposures = db.execute("SELECT * FROM exposure WHERE sentence_id=? ORDER BY tier, sort_order, id", (sid,)).fetchall()
+    resolutions = db.execute("SELECT * FROM resolution WHERE sentence_id=? ORDER BY sort_order, id", (sid,)).fetchall()
+    challenges = db.execute("SELECT * FROM challenge WHERE sentence_id=? ORDER BY id", (sid,)).fetchall()
     db.close()
-    return templates.TemplateResponse(request, "plan_detail.html", {
-        "plan": plan,
+    return templates.TemplateResponse(request, "sentence_detail.html", {
+        "sentence": sentence,
         "exposures": exposures, "resolutions": resolutions, "challenges": challenges,
-        "virtues": virtues, "weaknesses": weaknesses, "msg": msg
+        "msg": msg
     })
 
 
-@app.post("/plans/{pid}/edit")
-def edit_plan(
-    pid: int, title: str = Form(...), framing: str = Form(""),
-    virtue_id: Optional[int] = Form(None), weakness_id: Optional[int] = Form(None),
-    source_file: str = Form(""), notes: str = Form("")
-):
+@app.post("/sentences/{sid}/edit-meta")
+def edit_sentence_meta(sid: int, source_file: str = Form(""), notes: str = Form("")):
     db = get_db()
-    db.execute(
-        "UPDATE plan SET title=?, framing=?, virtue_id=?, weakness_id=?, source_file=?, notes=? WHERE id=?",
-        (title.strip(), framing.strip(), virtue_id or None, weakness_id or None, source_file.strip(), notes.strip(), pid)
-    )
+    db.execute("UPDATE sentence SET source_file=?, notes=? WHERE id=?",
+               (source_file.strip(), notes.strip(), sid))
     db.commit()
     db.close()
-    return RedirectResponse(f"/plans/{pid}?msg=Saved", status_code=303)
-
-
-@app.post("/plans/{pid}/delete")
-def delete_plan(pid: int):
-    db = get_db()
-    db.execute("DELETE FROM plan WHERE id=?", (pid,))
-    db.commit()
-    db.close()
-    return RedirectResponse("/plans?msg=Deleted", status_code=303)
+    return RedirectResponse(f"/sentences/{sid}?msg=Saved", status_code=303)
 
 
 # ── Exposures ────────────────────────────────
 
-@app.post("/plans/{pid}/exposures/new")
-def create_exposure(pid: int, title: str = Form(...), tier: str = Form("local"), description: str = Form(""), sort_order: int = Form(0)):
+@app.post("/sentences/{sid}/exposures/new")
+def create_exposure(sid: int, title: str = Form(...), tier: str = Form("local"), description: str = Form(""), sort_order: int = Form(0)):
     db = get_db()
-    db.execute("INSERT INTO exposure (plan_id, title, tier, description, sort_order) VALUES (?, ?, ?, ?, ?)",
-               (pid, title.strip(), tier, description.strip(), sort_order))
+    db.execute("INSERT INTO exposure (sentence_id, title, tier, description, sort_order) VALUES (?, ?, ?, ?, ?)",
+               (sid, title.strip(), tier, description.strip(), sort_order))
     db.commit()
     db.close()
-    return RedirectResponse(f"/plans/{pid}?msg=Exposure+added", status_code=303)
+    return RedirectResponse(f"/sentences/{sid}?msg=Exposure+added", status_code=303)
 
 
-@app.post("/plans/{pid}/exposures/{eid}/edit")
-def edit_exposure(pid: int, eid: int, title: str = Form(...), tier: str = Form("local"), description: str = Form(""), sort_order: int = Form(0)):
+@app.post("/sentences/{sid}/exposures/{eid}/edit")
+def edit_exposure(sid: int, eid: int, title: str = Form(...), tier: str = Form("local"), description: str = Form(""), sort_order: int = Form(0)):
     db = get_db()
-    db.execute("UPDATE exposure SET title=?, tier=?, description=?, sort_order=? WHERE id=? AND plan_id=?",
-               (title.strip(), tier, description.strip(), sort_order, eid, pid))
+    db.execute("UPDATE exposure SET title=?, tier=?, description=?, sort_order=? WHERE id=? AND sentence_id=?",
+               (title.strip(), tier, description.strip(), sort_order, eid, sid))
     db.commit()
     db.close()
-    return RedirectResponse(f"/plans/{pid}?msg=Saved", status_code=303)
+    return RedirectResponse(f"/sentences/{sid}?msg=Saved", status_code=303)
 
 
-@app.post("/plans/{pid}/exposures/{eid}/delete")
-def delete_exposure(pid: int, eid: int):
+@app.post("/sentences/{sid}/exposures/{eid}/delete")
+def delete_exposure(sid: int, eid: int):
     db = get_db()
-    db.execute("DELETE FROM exposure WHERE id=? AND plan_id=?", (eid, pid))
+    db.execute("DELETE FROM exposure WHERE id=? AND sentence_id=?", (eid, sid))
     db.commit()
     db.close()
-    return RedirectResponse(f"/plans/{pid}?msg=Deleted", status_code=303)
+    return RedirectResponse(f"/sentences/{sid}?msg=Deleted", status_code=303)
 
 
 # ── Resolutions ──────────────────────────────
 
-@app.post("/plans/{pid}/resolutions/new")
-def create_resolution(pid: int, title: str = Form(...), description: str = Form(""), duration_weeks: Optional[int] = Form(None), sort_order: int = Form(0)):
+@app.post("/sentences/{sid}/resolutions/new")
+def create_resolution(sid: int, title: str = Form(...), description: str = Form(""), duration_weeks: Optional[int] = Form(None), sort_order: int = Form(0)):
     db = get_db()
-    db.execute("INSERT INTO resolution (plan_id, title, description, duration_weeks, sort_order) VALUES (?, ?, ?, ?, ?)",
-               (pid, title.strip(), description.strip(), duration_weeks, sort_order))
+    db.execute("INSERT INTO resolution (sentence_id, title, description, duration_weeks, sort_order) VALUES (?, ?, ?, ?, ?)",
+               (sid, title.strip(), description.strip(), duration_weeks, sort_order))
     db.commit()
     db.close()
-    return RedirectResponse(f"/plans/{pid}?msg=Resolution+added", status_code=303)
+    return RedirectResponse(f"/sentences/{sid}?msg=Resolution+added", status_code=303)
 
 
-@app.post("/plans/{pid}/resolutions/{rid}/edit")
-def edit_resolution(pid: int, rid: int, title: str = Form(...), description: str = Form(""), duration_weeks: Optional[int] = Form(None), sort_order: int = Form(0)):
+@app.post("/sentences/{sid}/resolutions/{rid}/edit")
+def edit_resolution(sid: int, rid: int, title: str = Form(...), description: str = Form(""), duration_weeks: Optional[int] = Form(None), sort_order: int = Form(0)):
     db = get_db()
-    db.execute("UPDATE resolution SET title=?, description=?, duration_weeks=?, sort_order=? WHERE id=? AND plan_id=?",
-               (title.strip(), description.strip(), duration_weeks, sort_order, rid, pid))
+    db.execute("UPDATE resolution SET title=?, description=?, duration_weeks=?, sort_order=? WHERE id=? AND sentence_id=?",
+               (title.strip(), description.strip(), duration_weeks, sort_order, rid, sid))
     db.commit()
     db.close()
-    return RedirectResponse(f"/plans/{pid}?msg=Saved", status_code=303)
+    return RedirectResponse(f"/sentences/{sid}?msg=Saved", status_code=303)
 
 
-@app.post("/plans/{pid}/resolutions/{rid}/delete")
-def delete_resolution(pid: int, rid: int):
+@app.post("/sentences/{sid}/resolutions/{rid}/delete")
+def delete_resolution(sid: int, rid: int):
     db = get_db()
-    db.execute("DELETE FROM resolution WHERE id=? AND plan_id=?", (rid, pid))
+    db.execute("DELETE FROM resolution WHERE id=? AND sentence_id=?", (rid, sid))
     db.commit()
     db.close()
-    return RedirectResponse(f"/plans/{pid}?msg=Deleted", status_code=303)
+    return RedirectResponse(f"/sentences/{sid}?msg=Deleted", status_code=303)
 
 
 # ── Challenges ───────────────────────────────
 
-@app.post("/plans/{pid}/challenges/new")
-def create_challenge(pid: int, title: str = Form(...), description: str = Form(""), duration_days: Optional[int] = Form(None)):
+@app.post("/sentences/{sid}/challenges/new")
+def create_challenge(sid: int, title: str = Form(...), description: str = Form(""), duration_days: Optional[int] = Form(None)):
     db = get_db()
-    db.execute("INSERT INTO challenge (plan_id, title, description, duration_days) VALUES (?, ?, ?, ?)",
-               (pid, title.strip(), description.strip(), duration_days))
+    db.execute("INSERT INTO challenge (sentence_id, title, description, duration_days) VALUES (?, ?, ?, ?)",
+               (sid, title.strip(), description.strip(), duration_days))
     db.commit()
     db.close()
-    return RedirectResponse(f"/plans/{pid}?msg=Challenge+added", status_code=303)
+    return RedirectResponse(f"/sentences/{sid}?msg=Challenge+added", status_code=303)
 
 
-@app.post("/plans/{pid}/challenges/{cid}/edit")
-def edit_challenge(pid: int, cid: int, title: str = Form(...), description: str = Form(""), duration_days: Optional[int] = Form(None)):
+@app.post("/sentences/{sid}/challenges/{cid}/edit")
+def edit_challenge(sid: int, cid: int, title: str = Form(...), description: str = Form(""), duration_days: Optional[int] = Form(None)):
     db = get_db()
-    db.execute("UPDATE challenge SET title=?, description=?, duration_days=? WHERE id=? AND plan_id=?",
-               (title.strip(), description.strip(), duration_days, cid, pid))
+    db.execute("UPDATE challenge SET title=?, description=?, duration_days=? WHERE id=? AND sentence_id=?",
+               (title.strip(), description.strip(), duration_days, cid, sid))
     db.commit()
     db.close()
-    return RedirectResponse(f"/plans/{pid}?msg=Saved", status_code=303)
+    return RedirectResponse(f"/sentences/{sid}?msg=Saved", status_code=303)
 
 
-@app.post("/plans/{pid}/challenges/{cid}/delete")
-def delete_challenge(pid: int, cid: int):
+@app.post("/sentences/{sid}/challenges/{cid}/delete")
+def delete_challenge(sid: int, cid: int):
     db = get_db()
-    db.execute("DELETE FROM challenge WHERE id=? AND plan_id=?", (cid, pid))
+    db.execute("DELETE FROM challenge WHERE id=? AND sentence_id=?", (cid, sid))
     db.commit()
     db.close()
-    return RedirectResponse(f"/plans/{pid}?msg=Deleted", status_code=303)
+    return RedirectResponse(f"/sentences/{sid}?msg=Deleted", status_code=303)

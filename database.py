@@ -47,31 +47,23 @@ def init_db():
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
             text_en       TEXT NOT NULL,
             text_mr       TEXT,
-            subvirtue_id  INTEGER NOT NULL REFERENCES subvirtue(id) ON DELETE CASCADE
-        );
-
-        CREATE TABLE IF NOT EXISTS plan (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            title       TEXT NOT NULL,
-            framing     TEXT,
-            virtue_id   INTEGER REFERENCES virtue(id) ON DELETE SET NULL,
-            weakness_id INTEGER REFERENCES weakness(id) ON DELETE SET NULL,
-            source_file TEXT,
-            notes       TEXT
+            subvirtue_id  INTEGER NOT NULL REFERENCES subvirtue(id) ON DELETE CASCADE,
+            source_file   TEXT,
+            notes         TEXT
         );
 
         CREATE TABLE IF NOT EXISTS exposure (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            plan_id     INTEGER NOT NULL REFERENCES plan(id) ON DELETE CASCADE,
-            tier        TEXT CHECK(tier IN ('local','national','international')),
-            title       TEXT NOT NULL,
-            description TEXT,
-            sort_order  INTEGER DEFAULT 0
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            sentence_id   INTEGER NOT NULL REFERENCES sentence(id) ON DELETE CASCADE,
+            tier          TEXT CHECK(tier IN ('local','national','international')),
+            title         TEXT NOT NULL,
+            description   TEXT,
+            sort_order    INTEGER DEFAULT 0
         );
 
         CREATE TABLE IF NOT EXISTS resolution (
             id             INTEGER PRIMARY KEY AUTOINCREMENT,
-            plan_id        INTEGER NOT NULL REFERENCES plan(id) ON DELETE CASCADE,
+            sentence_id    INTEGER NOT NULL REFERENCES sentence(id) ON DELETE CASCADE,
             title          TEXT NOT NULL,
             description    TEXT,
             duration_weeks INTEGER,
@@ -79,11 +71,11 @@ def init_db():
         );
 
         CREATE TABLE IF NOT EXISTS challenge (
-            id              INTEGER PRIMARY KEY AUTOINCREMENT,
-            plan_id         INTEGER NOT NULL REFERENCES plan(id) ON DELETE CASCADE,
-            title           TEXT NOT NULL,
-            description     TEXT,
-            duration_days   INTEGER
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            sentence_id   INTEGER NOT NULL REFERENCES sentence(id) ON DELETE CASCADE,
+            title         TEXT NOT NULL,
+            description   TEXT,
+            duration_days INTEGER
         );
     """)
 

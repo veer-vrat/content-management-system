@@ -48,16 +48,24 @@
 
 <div class="table-wrap">
   <table>
-    <thead><tr><th>#</th><th>English</th><th>Marathi</th><th>Subvirtue</th><th></th></tr></thead>
+    <thead><tr><th>#</th><th>English</th><th>Marathi</th><th>Subvirtue</th><th>ERC</th><th></th></tr></thead>
     <tbody>
     {% for s in sentences %}
     <tr>
       <td style="color:var(--muted);font-family:var(--mono);font-size:11px;">{{ s.id }}</td>
-      <td style="max-width:360px;">{{ s.text_en }}</td>
-      <td style="color:var(--muted);max-width:280px;">{{ s.text_mr or '—' }}</td>
+      <td style="max-width:340px;"><a href="/sentences/{{ s.id }}" style="color:inherit;text-decoration:none;">{{ s.text_en }}</a></td>
+      <td style="color:var(--muted);max-width:240px;">{{ s.text_mr or '—' }}</td>
       <td><span class="badge">{{ s.subvirtue_name }}</span></td>
+      <td style="white-space:nowrap;">
+        {% if s.exp_count or s.res_count or s.cha_count %}
+          <span class="badge badge-local" title="Exposures">{{ s.exp_count }}E</span>
+          <span class="badge badge-national" title="Resolutions">{{ s.res_count }}R</span>
+          <span class="badge badge-international" title="Challenges">{{ s.cha_count }}C</span>
+        {% else %}—{% endif %}
+      </td>
       <td>
         <div class="item-actions">
+          <a href="/sentences/{{ s.id }}" class="btn btn-sm">ERC →</a>
           <button class="btn btn-sm" onclick="toggleEdit('s{{ s.id }}')">Edit</button>
           <form method="post" action="/sentences/{{ s.id }}/delete" style="display:inline" onsubmit="return confirm('Delete?')">
             <button type="submit" class="btn btn-sm btn-danger">Del</button>
