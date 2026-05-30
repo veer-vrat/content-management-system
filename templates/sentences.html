@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Sentences — Veervrat CMS{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Sentences</h1>
+  <p>Test sentences belonging to subvirtues.</p>
+</div>
+
+<!-- Filter -->
+<div style="margin-bottom:20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+  <span style="font-family:var(--mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">Filter by subvirtue</span>
+  <a href="/sentences" class="btn btn-sm {% if not filter_svid %}btn-primary{% endif %}">All</a>
+  {% for sv in subvirtues %}
+  <a href="/sentences?subvirtue_id={{ sv.id }}" class="btn btn-sm {% if filter_svid == sv.id %}btn-primary{% endif %}">{{ sv.name_en }}</a>
+  {% endfor %}
+</div>
+
+<!-- Add sentence -->
+<div class="form-card">
+  <h3>Add sentence</h3>
+  <form method="post" action="/sentences/new">
+    <div class="form-row">
+      <div class="field field-full"><label>Text (English)</label><input name="text_en" required placeholder="I acknowledge my limitations honestly..."></div>
+      <div class="field field-full"><label>Text (Marathi)</label><input name="text_mr" placeholder="Marathi translation..."></div>
+      <div class="field" style="min-width:220px;"><label>Subvirtue</label>
+        <select name="subvirtue_id" required>
+          <option value="">— select —</option>
+          {% for sv in subvirtues %}
+          <option value="{{ sv.id }}" {% if filter_svid == sv.id %}selected{% endif %}>{{ sv.name_en }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Add</button>
+    </div>
+  </form>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>English</th><th>Marathi</th><th>Subvirtue</th><th></th></tr></thead>
+    <tbody>
+    {% for s in sentences %}
+    <tr>
+      <td style="color:var(--muted);font-family:var(--mono);font-size:11px;">{{ s.id }}</td>
+      <td style="max-width:360px;">{{ s.text_en }}</td>
+      <td style="color:var(--muted);max-width:280px;">{{ s.text_mr or '—' }}</td>
+      <td><span class="badge">{{ s.subvirtue_name }}</span></td>
+      <td>
+        <div class="item-actions">
+          <button class="btn btn-sm" onclick="toggleEdit('s{{ s.id }}')">Edit</button>
+          <form method="post" action="/sentences/{{ s.id }}/delete" style="display:inline" onsubmit="return confirm('Delete?')">
+            <button type="submit" class="btn btn-sm btn-danger">Del</button>
+          </form>
+        </div>
+        <form method="post" action="/sentences/{{ s.id }}/edit" class="edit-form" id="s{{ s.id }}">
+          <div class="form-row" style="margin-top:10px;">
+            <div class="field field-full"><label>English</label><textarea name="text_en" required>{{ s.text_en }}</textarea></div>
+            <div class="field field-full"><label>Marathi</label><textarea name="text_mr">{{ s.text_mr or '' }}</textarea></div>
+            <div class="field"><label>Subvirtue</label>
+              <select name="subvirtue_id" required>
+                {% for sv in subvirtues %}<option value="{{ sv.id }}" {% if sv.id == s.subvirtue_id %}selected{% endif %}>{{ sv.name_en }}</option>{% endfor %}
+              </select>
+            </div>
+            <button type="submit" class="btn btn-sm btn-primary">Save</button>
+            <button type="button" class="btn btn-sm" onclick="toggleEdit('s{{ s.id }}')">Cancel</button>
+          </div>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" style="color:var(--muted);text-align:center;padding:32px;">No sentences yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+<script>function toggleEdit(id){document.getElementById(id).classList.toggle('open');}</script>
+{% endblock %}

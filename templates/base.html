@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}Veervrat CMS{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="app">
+  <nav>
+    <div class="brand">
+      <small>Veervrat</small>
+      Content CMS
+    </div>
+    <a href="/" class="{% if request.url.path == '/' %}active{% endif %}">Data Model</a>
+    <div class="nav-section">Content</div>
+    <a href="/virtues" class="{% if '/virtues' in request.url.path %}active{% endif %}">Virtues</a>
+    <a href="/subvirtues" class="{% if '/subvirtues' in request.url.path %}active{% endif %}">Subvirtues</a>
+    <a href="/weaknesses" class="{% if '/weaknesses' in request.url.path %}active{% endif %}">Weaknesses</a>
+    <a href="/sentences" class="{% if '/sentences' in request.url.path %}active{% endif %}">Sentences</a>
+    <div class="nav-section">Journeys</div>
+    <a href="/plans" class="{% if '/plans' in request.url.path %}active{% endif %}">Plans</a>
+  </nav>
+  <main>
+    {% if msg %}
+    <div class="flash">{{ msg }}</div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+</body>
+</html>

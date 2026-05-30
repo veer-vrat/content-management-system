@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Virtues — Veervrat CMS{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Virtues</h1>
+  <p>Top-level character virtues. Each virtue contains multiple subvirtues.</p>
+</div>
+
+<div class="form-card">
+  <h3>Add virtue</h3>
+  <form method="post" action="/virtues/new">
+    <div class="form-row">
+      <div class="field"><label>Name (English)</label><input name="name_en" required placeholder="e.g. Self-reliance"></div>
+      <div class="field"><label>Name (Marathi)</label><input name="name_mr" placeholder="e.g. स्वावलंबन"></div>
+      <button type="submit" class="btn btn-primary">Add</button>
+    </div>
+  </form>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>English</th><th>Marathi</th><th>Subvirtues</th><th></th></tr></thead>
+    <tbody>
+    {% for v in virtues %}
+    <tr>
+      <td style="color:var(--muted);font-family:var(--mono);font-size:11px;">{{ v.id }}</td>
+      <td><strong>{{ v.name_en }}</strong></td>
+      <td>{{ v.name_mr or '—' }}</td>
+      <td><span class="badge">{{ v.subvirtue_count }}</span></td>
+      <td>
+        <div class="item-actions">
+          <button class="btn btn-sm" onclick="toggleEdit('v{{ v.id }}')">Edit</button>
+          <form method="post" action="/virtues/{{ v.id }}/delete" style="display:inline" onsubmit="return confirm('Delete {{ v.name_en }}?')">
+            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+          </form>
+        </div>
+        <form method="post" action="/virtues/{{ v.id }}/edit" class="edit-form" id="v{{ v.id }}">
+          <div class="form-row" style="margin-top:10px;">
+            <div class="field"><label>English</label><input name="name_en" value="{{ v.name_en }}" required></div>
+            <div class="field"><label>Marathi</label><input name="name_mr" value="{{ v.name_mr or '' }}"></div>
+            <button type="submit" class="btn btn-sm btn-primary">Save</button>
+            <button type="button" class="btn btn-sm" onclick="toggleEdit('v{{ v.id }}')">Cancel</button>
+          </div>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" style="color:var(--muted);text-align:center;padding:32px;">No virtues yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+function toggleEdit(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+</script>
+{% endblock %}

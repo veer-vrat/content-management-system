@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Subvirtues — Veervrat CMS{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Subvirtues</h1>
+  <p>Each subvirtue belongs to one virtue and has multiple sentences.</p>
+</div>
+
+<div class="form-card">
+  <h3>Add subvirtue</h3>
+  <form method="post" action="/subvirtues/new">
+    <div class="form-row">
+      <div class="field"><label>Name (English)</label><input name="name_en" required placeholder="e.g. Intellectual Self-reliance"></div>
+      <div class="field"><label>Name (Marathi)</label><input name="name_mr" placeholder="e.g. वैचारिक स्वावलंबन"></div>
+      <div class="field" style="min-width:180px;"><label>Virtue</label>
+        <select name="virtue_id" required>
+          <option value="">— select —</option>
+          {% for v in virtues %}<option value="{{ v.id }}">{{ v.name_en }}</option>{% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Add</button>
+    </div>
+  </form>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>English</th><th>Marathi</th><th>Virtue</th><th>Sentences</th><th></th></tr></thead>
+    <tbody>
+    {% for sv in subvirtues %}
+    <tr>
+      <td style="color:var(--muted);font-family:var(--mono);font-size:11px;">{{ sv.id }}</td>
+      <td><strong>{{ sv.name_en }}</strong></td>
+      <td>{{ sv.name_mr or '—' }}</td>
+      <td><span class="badge">{{ sv.virtue_name }}</span></td>
+      <td><a href="/sentences?subvirtue_id={{ sv.id }}" class="badge">{{ sv.sentence_count }}</a></td>
+      <td>
+        <div class="item-actions">
+          <button class="btn btn-sm" onclick="toggleEdit('sv{{ sv.id }}')">Edit</button>
+          <form method="post" action="/subvirtues/{{ sv.id }}/delete" style="display:inline" onsubmit="return confirm('Delete?')">
+            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+          </form>
+        </div>
+        <form method="post" action="/subvirtues/{{ sv.id }}/edit" class="edit-form" id="sv{{ sv.id }}">
+          <div class="form-row" style="margin-top:10px;">
+            <div class="field"><label>English</label><input name="name_en" value="{{ sv.name_en }}" required></div>
+            <div class="field"><label>Marathi</label><input name="name_mr" value="{{ sv.name_mr or '' }}"></div>
+            <div class="field"><label>Virtue</label>
+              <select name="virtue_id" required>
+                {% for v in virtues %}<option value="{{ v.id }}" {% if v.id == sv.virtue_id %}selected{% endif %}>{{ v.name_en }}</option>{% endfor %}
+              </select>
+            </div>
+            <button type="submit" class="btn btn-sm btn-primary">Save</button>
+            <button type="button" class="btn btn-sm" onclick="toggleEdit('sv{{ sv.id }}')">Cancel</button>
+          </div>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6" style="color:var(--muted);text-align:center;padding:32px;">No subvirtues yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+<script>function toggleEdit(id){document.getElementById(id).classList.toggle('open');}</script>
+{% endblock %}

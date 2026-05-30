@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}Data Model — Veervrat CMS{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <h1>Data Model</h1>
+  <p>Entity relationships and row counts for all content tables.</p>
+</div>
+
+<div class="dm-grid">
+  <div class="dm-card"><a href="/virtues"><div class="dm-count">{{ counts.virtue }}</div><div class="dm-label">Virtues</div></a></div>
+  <div class="dm-card"><a href="/subvirtues"><div class="dm-count">{{ counts.subvirtue }}</div><div class="dm-label">Subvirtues</div></a></div>
+  <div class="dm-card"><a href="/weaknesses"><div class="dm-count">{{ counts.weakness }}</div><div class="dm-label">Weaknesses</div></a></div>
+  <div class="dm-card"><a href="/sentences"><div class="dm-count">{{ counts.sentence }}</div><div class="dm-label">Sentences</div></a></div>
+  <div class="dm-card"><a href="/plans"><div class="dm-count">{{ counts.plan }}</div><div class="dm-label">Plans</div></a></div>
+  <div class="dm-card"><a href="/plans"><div class="dm-count">{{ counts.exposure }}</div><div class="dm-label">Exposures</div></a></div>
+  <div class="dm-card"><a href="/plans"><div class="dm-count">{{ counts.resolution }}</div><div class="dm-label">Resolutions</div></a></div>
+  <div class="dm-card"><a href="/plans"><div class="dm-count">{{ counts.challenge }}</div><div class="dm-label">Challenges</div></a></div>
+</div>
+
+<div class="erd">
+  <svg width="860" height="520" viewBox="0 0 860 520" fill="none" xmlns="http://www.w3.org/2000/svg"
+       style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;">
+
+    <!-- ── Styles ── -->
+    <style>
+      .box { fill: #fff; stroke: rgba(28,26,23,0.16); stroke-width: 1; rx: 8; }
+      .box-head { fill: #1C1A17; }
+      .box-head-accent { fill: #2F5B4F; }
+      .box-head-warn { fill: #C0512F; }
+      .label { font-size: 11px; font-weight: 600; fill: #fff; letter-spacing: 0.05em; text-transform: uppercase; }
+      .field-name { font-size: 11px; fill: #1C1A17; }
+      .field-type { font-size: 10px; fill: #8A817A; font-family: 'JetBrains Mono', monospace; }
+      .pk { font-size: 9px; fill: #C0512F; font-family: monospace; font-weight: 600; }
+      .fk { font-size: 9px; fill: #2F5B4F; font-family: monospace; }
+      .rel { stroke: rgba(47,91,79,0.35); stroke-width: 1.5; fill: none; stroke-dasharray: 4 3; }
+      .rel-solid { stroke: #2F5B4F; stroke-width: 1.5; fill: none; }
+      .arrow { fill: #2F5B4F; }
+      .note { font-size: 10px; fill: #8A817A; font-style: italic; }
+    </style>
+
+    <!-- ═══ VIRTUE (top-left) ═══ -->
+    <rect x="30" y="40" width="160" height="108" rx="8" class="box"/>
+    <rect x="30" y="40" width="160" height="28" rx="8" class="box-head"/>
+    <rect x="30" y="56" width="160" height="12" class="box-head"/>
+    <text x="110" y="59" text-anchor="middle" class="label">virtue</text>
+    <text x="44" y="86" class="pk">PK</text><text x="60" y="86" class="field-name">id</text><text x="130" y="86" class="field-type">integer</text>
+    <text x="44" y="102" class="field-name">name_en</text><text x="130" y="102" class="field-type">text</text>
+    <text x="44" y="118" class="field-name">name_mr</text><text x="130" y="118" class="field-type">text</text>
+    <text x="44" y="134" class="field-name">   </text>
+
+    <!-- ═══ SUBVIRTUE (top-center) ═══ -->
+    <rect x="240" y="40" width="175" height="122" rx="8" class="box"/>
+    <rect x="240" y="40" width="175" height="28" rx="8" class="box-head"/>
+    <rect x="240" y="56" width="175" height="12" class="box-head"/>
+    <text x="327" y="59" text-anchor="middle" class="label">subvirtue</text>
+    <text x="254" y="86" class="pk">PK</text><text x="270" y="86" class="field-name">id</text><text x="355" y="86" class="field-type">integer</text>
+    <text x="254" y="102" class="field-name">name_en</text><text x="355" y="102" class="field-type">text</text>
+    <text x="254" y="118" class="field-name">name_mr</text><text x="355" y="118" class="field-type">text</text>
+    <text x="254" y="134" class="fk">FK</text><text x="270" y="134" class="field-name">virtue_id</text><text x="355" y="134" class="field-type">→ virtue</text>
+    <text x="254" y="150" class="field-name">   </text>
+
+    <!-- virtue → subvirtue arrow -->
+    <path d="M190 88 L240 88" class="rel-solid"/>
+    <polygon points="240,85 240,91 247,88" class="arrow"/>
+    <text x="210" y="83" text-anchor="middle" class="note">1</text>
+    <text x="232" y="83" text-anchor="middle" class="note">N</text>
+
+    <!-- ═══ SENTENCE (top-right) ═══ -->
+    <rect x="470" y="40" width="175" height="122" rx="8" class="box"/>
+    <rect x="470" y="40" width="175" height="28" rx="8" class="box-head"/>
+    <rect x="470" y="56" width="175" height="12" class="box-head"/>
+    <text x="557" y="59" text-anchor="middle" class="label">sentence</text>
+    <text x="484" y="86" class="pk">PK</text><text x="500" y="86" class="field-name">id</text><text x="585" y="86" class="field-type">integer</text>
+    <text x="484" y="102" class="field-name">text_en</text><text x="585" y="102" class="field-type">text</text>
+    <text x="484" y="118" class="field-name">text_mr</text><text x="585" y="118" class="field-type">text</text>
+    <text x="484" y="134" class="fk">FK</text><text x="500" y="134" class="field-name">subvirtue_id</text><text x="585" y="134" class="field-type">→ sv</text>
+    <text x="484" y="150" class="field-name">   </text>
+
+    <!-- subvirtue → sentence -->
+    <path d="M415 88 L470 88" class="rel-solid"/>
+    <polygon points="470,85 470,91 477,88" class="arrow"/>
+    <text x="435" y="83" text-anchor="middle" class="note">1</text>
+    <text x="462" y="83" text-anchor="middle" class="note">N</text>
+
+    <!-- ═══ WEAKNESS (left) ═══ -->
+    <rect x="30" y="230" width="160" height="122" rx="8" class="box"/>
+    <rect x="30" y="230" width="160" height="28" rx="8" class="box-head-accent"/>
+    <rect x="30" y="246" width="160" height="12" class="box-head-accent"/>
+    <text x="110" y="249" text-anchor="middle" class="label">weakness</text>
+    <text x="44" y="276" class="pk">PK</text><text x="60" y="276" class="field-name">id</text><text x="130" y="276" class="field-type">integer</text>
+    <text x="44" y="292" class="field-name">name_en</text><text x="130" y="292" class="field-type">text</text>
+    <text x="44" y="308" class="field-name">name_mr</text><text x="130" y="308" class="field-type">text</text>
+    <text x="44" y="324" class="field-name">category</text><text x="130" y="324" class="field-type">A/B/C</text>
+    <text x="44" y="340" class="field-name">   </text>
+
+    <!-- ═══ WEAKNESS_SUBVIRTUE (center join) ═══ -->
+    <rect x="240" y="230" width="175" height="108" rx="8" class="box"/>
+    <rect x="240" y="230" width="175" height="28" rx="8" style="fill:#8A817A"/>
+    <rect x="240" y="246" width="175" height="12" style="fill:#8A817A"/>
+    <text x="327" y="249" text-anchor="middle" class="label">weakness_subvirtue</text>
+    <text x="254" y="276" class="fk">FK</text><text x="270" y="276" class="field-name">weakness_id</text><text x="370" y="276" class="field-type">→ w</text>
+    <text x="254" y="292" class="fk">FK</text><text x="270" y="292" class="field-name">subvirtue_id</text><text x="370" y="292" class="field-type">→ sv</text>
+    <text x="254" y="308" class="field-name">priority</text><text x="370" y="308" class="field-type">integer</text>
+    <text x="270" y="324" class="note">join table</text>
+
+    <!-- weakness → weakness_subvirtue -->
+    <path d="M190 282 L240 282" class="rel-solid"/>
+    <polygon points="240,279 240,285 247,282" class="arrow"/>
+
+    <!-- weakness_subvirtue → subvirtue -->
+    <path d="M327 230 L327 162" class="rel-solid"/>
+    <polygon points="324,162 330,162 327,155" class="arrow"/>
+
+    <!-- ═══ PLAN (bottom-center) ═══ -->
+    <rect x="240" y="410" width="175" height="94" rx="8" class="box"/>
+    <rect x="240" y="410" width="175" height="28" rx="8" class="box-head-warn"/>
+    <rect x="240" y="426" width="175" height="12" class="box-head-warn"/>
+    <text x="327" y="429" text-anchor="middle" class="label">plan</text>
+    <text x="254" y="456" class="pk">PK</text><text x="270" y="456" class="field-name">id</text><text x="355" y="456" class="field-type">integer</text>
+    <text x="254" y="472" class="field-name">title / framing</text>
+    <text x="254" y="488" class="fk">FK</text><text x="270" y="488" class="field-name">virtue_id, weakness_id</text>
+    <text x="254" y="500" class="field-name">source_file</text>
+
+    <!-- virtue → plan -->
+    <path d="M110 148 L110 210 L270 440" class="rel" stroke-dasharray="none" style="stroke:rgba(47,91,79,0.25);"/>
+    <text x="116" y="400" class="note">virtue</text>
+
+    <!-- weakness → plan -->
+    <path d="M110 352 L110 480 L240 480" class="rel-solid"/>
+    <polygon points="240,477 240,483 247,480" class="arrow"/>
+
+    <!-- ═══ EXPOSURE (right of plan) ═══ -->
+    <rect x="480" y="390" width="170" height="108" rx="8" class="box"/>
+    <rect x="480" y="390" width="170" height="28" rx="8" class="box-head-warn"/>
+    <rect x="480" y="406" width="170" height="12" class="box-head-warn"/>
+    <text x="565" y="409" text-anchor="middle" class="label">exposure</text>
+    <text x="494" y="436" class="pk">PK</text><text x="510" y="436" class="field-name">id</text>
+    <text x="494" y="452" class="fk">FK</text><text x="510" y="452" class="field-name">plan_id</text>
+    <text x="494" y="468" class="field-name">tier</text><text x="560" y="468" class="field-type">L/N/I</text>
+    <text x="494" y="484" class="field-name">title, description</text>
+    <text x="494" y="496" class="field-name">sort_order</text>
+
+    <!-- plan → exposure -->
+    <path d="M415 450 L480 450" class="rel-solid"/>
+    <polygon points="480,447 480,453 487,450" class="arrow"/>
+    <text x="440" y="445" text-anchor="middle" class="note">1:N</text>
+
+    <!-- ═══ RESOLUTION (far right, top) ═══ -->
+    <rect x="680" y="300" width="165" height="122" rx="8" class="box"/>
+    <rect x="680" y="300" width="165" height="28" rx="8" class="box-head-warn"/>
+    <rect x="680" y="316" width="165" height="12" class="box-head-warn"/>
+    <text x="762" y="319" text-anchor="middle" class="label">resolution</text>
+    <text x="694" y="346" class="pk">PK</text><text x="710" y="346" class="field-name">id</text>
+    <text x="694" y="362" class="fk">FK</text><text x="710" y="362" class="field-name">plan_id</text>
+    <text x="694" y="378" class="field-name">title, description</text>
+    <text x="694" y="394" class="field-name">duration_weeks</text>
+    <text x="694" y="410" class="field-name">sort_order</text>
+
+    <!-- plan → resolution -->
+    <path d="M415 430 L650 430 L650 370 L680 370" class="rel-solid"/>
+    <polygon points="680,367 680,373 687,370" class="arrow"/>
+    <text x="648" y="425" text-anchor="end" class="note">1:N</text>
+
+    <!-- ═══ CHALLENGE (far right, bottom) ═══ -->
+    <rect x="680" y="440" width="165" height="94" rx="8" class="box"/>
+    <rect x="680" y="440" width="165" height="28" rx="8" class="box-head-warn"/>
+    <rect x="680" y="456" width="165" height="12" class="box-head-warn"/>
+    <text x="762" y="459" text-anchor="middle" class="label">challenge</text>
+    <text x="694" y="486" class="pk">PK</text><text x="710" y="486" class="field-name">id</text>
+    <text x="694" y="502" class="fk">FK</text><text x="710" y="502" class="field-name">plan_id</text>
+    <text x="694" y="518" class="field-name">title, duration_days</text>
+
+    <!-- plan → challenge -->
+    <path d="M415 468 L650 468 L650 487 L680 487" class="rel-solid"/>
+    <polygon points="680,484 680,490 687,487" class="arrow"/>
+    <text x="648" y="463" text-anchor="end" class="note">1:1</text>
+
+    <!-- ── Legend ── -->
+    <rect x="30" y="470" width="190" height="44" rx="6" style="fill:rgba(250,247,242,0.8); stroke: rgba(28,26,23,0.1); stroke-width:1;"/>
+    <rect x="40" y="481" width="10" height="10" rx="2" class="box-head"/>
+    <text x="56" y="490" class="note">Core content entity</text>
+    <rect x="40" y="497" width="10" height="10" rx="2" class="box-head-warn"/>
+    <text x="56" y="506" class="note">Journey / plan entity</text>
+
+  </svg>
+</div>
+
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Plans — Veervrat CMS{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Plans</h1>
+  <p>Each plan belongs to a virtue (and optionally a weakness) and contains exposures, resolutions, and a challenge.</p>
+</div>
+
+<div class="form-card">
+  <h3>New plan</h3>
+  <form method="post" action="/plans/new">
+    <div class="form-row">
+      <div class="field" style="flex:2;"><label>Title</label><input name="title" required placeholder="e.g. Initiative — Forward-action framing"></div>
+      <div class="field"><label>Virtue</label>
+        <select name="virtue_id">
+          <option value="">— none —</option>
+          {% for v in virtues %}<option value="{{ v.id }}">{{ v.name_en }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field"><label>Weakness</label>
+        <select name="weakness_id">
+          <option value="">— none —</option>
+          {% for w in weaknesses %}<option value="{{ w.id }}">[{{ w.category }}] {{ w.name_en }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-row" style="margin-top:12px;">
+      <div class="field field-full"><label>Statement framing (optional)</label><input name="framing" placeholder="What specific angle or problem statement does this plan address?"></div>
+      <div class="field field-full"><label>Source file (original document)</label><input name="source_file" placeholder="e.g. Problem33_Initiative_Plan (1).pdf"></div>
+    </div>
+    <div class="form-row" style="margin-top:12px;">
+      <div class="field field-full"><label>Notes</label><textarea name="notes" placeholder="Any notes about this plan..."></textarea></div>
+    </div>
+    <div style="margin-top:12px;"><button type="submit" class="btn btn-primary">Create plan</button></div>
+  </form>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Title</th><th>Virtue</th><th>Weakness</th><th>Source</th><th>E</th><th>R</th><th>C</th><th></th></tr></thead>
+    <tbody>
+    {% for p in plans %}
+    <tr>
+      <td style="color:var(--muted);font-family:var(--mono);font-size:11px;">{{ p.id }}</td>
+      <td><a href="/plans/{{ p.id }}" style="color:var(--accent-2);font-weight:500;text-decoration:none;">{{ p.title }}</a>
+        {% if p.framing %}<br><span style="color:var(--muted);font-size:12px;">{{ p.framing }}</span>{% endif %}
+      </td>
+      <td>{% if p.virtue_name %}<span class="badge">{{ p.virtue_name }}</span>{% else %}—{% endif %}</td>
+      <td>{% if p.weakness_name %}<span style="font-size:12px;color:var(--muted);">{{ p.weakness_name }}</span>{% else %}—{% endif %}</td>
+      <td style="font-size:12px;color:var(--muted);max-width:140px;word-break:break-all;">{{ p.source_file or '—' }}</td>
+      <td><span class="badge badge-local">{{ p.exp_count }}</span></td>
+      <td><span class="badge badge-national">{{ p.res_count }}</span></td>
+      <td><span class="badge badge-international">{{ p.cha_count }}</span></td>
+      <td>
+        <a href="/plans/{{ p.id }}" class="btn btn-sm">Edit →</a>
+        <form method="post" action="/plans/{{ p.id }}/delete" style="display:inline" onsubmit="return confirm('Delete plan?')">
+          <button type="submit" class="btn btn-sm btn-danger">Del</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="9" style="color:var(--muted);text-align:center;padding:32px;">No plans yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

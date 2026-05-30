@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Weaknesses — Veervrat CMS{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Weaknesses</h1>
+  <p>29 weaknesses across clusters A, B, C. Click any to manage its subvirtue links.</p>
+</div>
+
+<div class="form-card">
+  <h3>Add weakness</h3>
+  <form method="post" action="/weaknesses/new">
+    <div class="form-row">
+      <div class="field field-full"><label>Name (English)</label><input name="name_en" required placeholder="e.g. Bad communication"></div>
+      <div class="field"><label>Name (Marathi)</label><input name="name_mr" placeholder="e.g. विसंवाद"></div>
+      <div class="field" style="min-width:100px;max-width:120px;"><label>Cluster</label>
+        <select name="category" required><option value="A">A</option><option value="B">B</option><option value="C">C</option></select>
+      </div>
+      <button type="submit" class="btn btn-primary">Add</button>
+    </div>
+  </form>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Cluster</th><th>English</th><th>Marathi</th><th>Subvirtues</th><th></th></tr></thead>
+    <tbody>
+    {% for w in weaknesses %}
+    <tr>
+      <td><span class="badge badge-{{ w.category | lower }}">{{ w.category }}</span></td>
+      <td><a href="/weaknesses/{{ w.id }}" style="color:var(--accent-2);font-weight:500;text-decoration:none;">{{ w.name_en }}</a></td>
+      <td style="color:var(--muted);">{{ w.name_mr or '—' }}</td>
+      <td><span class="badge">{{ w.sv_count }}</span></td>
+      <td>
+        <a href="/weaknesses/{{ w.id }}" class="btn btn-sm">View →</a>
+        <form method="post" action="/weaknesses/{{ w.id }}/delete" style="display:inline" onsubmit="return confirm('Delete {{ w.name_en }}?')">
+          <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" style="color:var(--muted);text-align:center;padding:32px;">No weaknesses yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
