@@ -78,10 +78,22 @@ def init_db():
             duration_days INTEGER
         );
 
-        CREATE TABLE IF NOT EXISTS sentence_weakness (
-            sentence_id INTEGER NOT NULL REFERENCES sentence(id) ON DELETE CASCADE,
+        CREATE TABLE IF NOT EXISTS exposure_weakness (
+            exposure_id INTEGER NOT NULL REFERENCES exposure(id) ON DELETE CASCADE,
             weakness_id INTEGER NOT NULL REFERENCES weakness(id) ON DELETE CASCADE,
-            PRIMARY KEY (sentence_id, weakness_id)
+            PRIMARY KEY (exposure_id, weakness_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS resolution_weakness (
+            resolution_id INTEGER NOT NULL REFERENCES resolution(id) ON DELETE CASCADE,
+            weakness_id   INTEGER NOT NULL REFERENCES weakness(id) ON DELETE CASCADE,
+            PRIMARY KEY (resolution_id, weakness_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS challenge_weakness (
+            challenge_id INTEGER NOT NULL REFERENCES challenge(id) ON DELETE CASCADE,
+            weakness_id  INTEGER NOT NULL REFERENCES weakness(id) ON DELETE CASCADE,
+            PRIMARY KEY (challenge_id, weakness_id)
         );
     """)
 

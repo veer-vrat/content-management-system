@@ -4,7 +4,7 @@ import sqlite3
 from pathlib import Path
 
 DB_PATH = Path(__file__).parent / "veervrat_cms.db"
-DATA_PATH = Path(__file__).parent.parent
+DATA_PATH = Path(__file__).parent / "data"
 
 
 def seed():

@@ -319,34 +319,84 @@ def view_sentence(request: Request, sid: int, msg: str = ""):
     exposures = db.execute("SELECT * FROM exposure WHERE sentence_id=? ORDER BY tier, sort_order, id", (sid,)).fetchall()
     resolutions = db.execute("SELECT * FROM resolution WHERE sentence_id=? ORDER BY sort_order, id", (sid,)).fetchall()
     challenges = db.execute("SELECT * FROM challenge WHERE sentence_id=? ORDER BY id", (sid,)).fetchall()
-    linked_weaknesses = db.execute("""
-        SELECT w.* FROM weakness w
-        JOIN sentence_weakness sw ON sw.weakness_id = w.id
-        WHERE sw.sentence_id = ? ORDER BY w.name_en
-    """, (sid,)).fetchall()
     all_weaknesses = db.execute("SELECT * FROM weakness ORDER BY category, name_en").fetchall()
+
+    def weakness_map(join_table, fk_col, ids):
+        if not ids:
+            return {}
+        placeholders = ",".join("?" * len(ids))
+        rows = db.execute(f"""
+            SELECT jt.{fk_col}, w.id, w.name_en FROM {join_table} jt
+            JOIN weakness w ON w.id = jt.weakness_id
+            WHERE jt.{fk_col} IN ({placeholders})
+        """, ids).fetchall()
+        result = {}
+        for r in rows:
+            result.setdefault(r[0], []).append({"id": r[1], "name_en": r[2]})
+        return result
+
+    exp_ids = [e["id"] for e in exposures]
+    res_ids = [r["id"] for r in resolutions]
+    cha_ids = [c["id"] for c in challenges]
+    exp_weaknesses = weakness_map("exposure_weakness", "exposure_id", exp_ids)
+    res_weaknesses = weakness_map("resolution_weakness", "resolution_id", res_ids)
+    cha_weaknesses = weakness_map("challenge_weakness", "challenge_id", cha_ids)
+
     db.close()
     return templates.TemplateResponse(request, "sentence_detail.html", {
         "sentence": sentence,
         "exposures": exposures, "resolutions": resolutions, "challenges": challenges,
-        "linked_weaknesses": linked_weaknesses, "all_weaknesses": all_weaknesses,
-        "msg": msg
+        "exp_weaknesses": exp_weaknesses, "res_weaknesses": res_weaknesses, "cha_weaknesses": cha_weaknesses,
+        "all_weaknesses": all_weaknesses, "msg": msg
     })
 
 
-@app.post("/sentences/{sid}/link-weakness")
-def link_weakness(sid: int, weakness_id: int = Form(...)):
+# ── Weakness linking for E/R/C ───────────────
+
+@app.post("/sentences/{sid}/exposures/{eid}/link-weakness")
+def link_exposure_weakness(sid: int, eid: int, weakness_id: int = Form(...)):
     db = get_db()
-    db.execute("INSERT OR IGNORE INTO sentence_weakness (sentence_id, weakness_id) VALUES (?, ?)", (sid, weakness_id))
+    db.execute("INSERT OR IGNORE INTO exposure_weakness (exposure_id, weakness_id) VALUES (?, ?)", (eid, weakness_id))
     db.commit()
     db.close()
     return RedirectResponse(f"/sentences/{sid}?msg=Weakness+linked", status_code=303)
 
-
-@app.post("/sentences/{sid}/unlink-weakness/{wid}")
-def unlink_weakness(sid: int, wid: int):
+@app.post("/sentences/{sid}/exposures/{eid}/unlink-weakness/{wid}")
+def unlink_exposure_weakness(sid: int, eid: int, wid: int):
     db = get_db()
-    db.execute("DELETE FROM sentence_weakness WHERE sentence_id=? AND weakness_id=?", (sid, wid))
+    db.execute("DELETE FROM exposure_weakness WHERE exposure_id=? AND weakness_id=?", (eid, wid))
+    db.commit()
+    db.close()
+    return RedirectResponse(f"/sentences/{sid}?msg=Unlinked", status_code=303)
+
+@app.post("/sentences/{sid}/resolutions/{rid}/link-weakness")
+def link_resolution_weakness(sid: int, rid: int, weakness_id: int = Form(...)):
+    db = get_db()
+    db.execute("INSERT OR IGNORE INTO resolution_weakness (resolution_id, weakness_id) VALUES (?, ?)", (rid, weakness_id))
+    db.commit()
+    db.close()
+    return RedirectResponse(f"/sentences/{sid}?msg=Weakness+linked", status_code=303)
+
+@app.post("/sentences/{sid}/resolutions/{rid}/unlink-weakness/{wid}")
+def unlink_resolution_weakness(sid: int, rid: int, wid: int):
+    db = get_db()
+    db.execute("DELETE FROM resolution_weakness WHERE resolution_id=? AND weakness_id=?", (rid, wid))
+    db.commit()
+    db.close()
+    return RedirectResponse(f"/sentences/{sid}?msg=Unlinked", status_code=303)
+
+@app.post("/sentences/{sid}/challenges/{cid}/link-weakness")
+def link_challenge_weakness(sid: int, cid: int, weakness_id: int = Form(...)):
+    db = get_db()
+    db.execute("INSERT OR IGNORE INTO challenge_weakness (challenge_id, weakness_id) VALUES (?, ?)", (cid, weakness_id))
+    db.commit()
+    db.close()
+    return RedirectResponse(f"/sentences/{sid}?msg=Weakness+linked", status_code=303)
+
+@app.post("/sentences/{sid}/challenges/{cid}/unlink-weakness/{wid}")
+def unlink_challenge_weakness(sid: int, cid: int, wid: int):
+    db = get_db()
+    db.execute("DELETE FROM challenge_weakness WHERE challenge_id=? AND weakness_id=?", (cid, wid))
     db.commit()
     db.close()
     return RedirectResponse(f"/sentences/{sid}?msg=Unlinked", status_code=303)

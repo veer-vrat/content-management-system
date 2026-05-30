@@ -2,6 +2,28 @@
 {% block title %}{{ sentence.text_en[:60] }}… — Veervrat CMS{% endblock %}
 {% block content %}
 
+{% macro weakness_tags(entity_type, entity_id, weaknesses) %}
+<div class="weakness-tags" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+  {% for w in weaknesses %}
+  <span class="badge badge-national" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;">
+    {{ w.name_en }}
+    <form method="post" action="/sentences/{{ sentence.id }}/{{ entity_type }}s/{{ entity_id }}/unlink-weakness/{{ w.id }}" style="display:inline;margin:0;">
+      <button type="submit" style="background:none;border:none;cursor:pointer;color:inherit;font-size:11px;padding:0;line-height:1;" title="Remove">×</button>
+    </form>
+  </span>
+  {% endfor %}
+  <form method="post" action="/sentences/{{ sentence.id }}/{{ entity_type }}s/{{ entity_id }}/link-weakness" style="display:inline-flex;gap:6px;align-items:center;">
+    <select name="weakness_id" required style="font-size:11px;padding:2px 6px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--fg);font-family:inherit;">
+      <option value="">+ weakness</option>
+      {% for w in all_weaknesses %}
+      <option value="{{ w.id }}">[{{ w.category }}] {{ w.name_en }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-sm" style="padding:2px 8px;font-size:11px;">Link</button>
+  </form>
+</div>
+{% endmacro %}
+
 <div style="margin-bottom:24px;">
   <a href="/sentences?virtue_id={{ sentence.virtue_id }}&subvirtue_id={{ sentence.subvirtue_id }}" class="btn btn-sm">← Sentences</a>
 </div>
@@ -31,36 +53,6 @@
   </form>
 </div>
 
-<!-- Weakness tags -->
-<div class="form-card">
-  <h3>Weaknesses addressed</h3>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-    {% for w in linked_weaknesses %}
-    <span class="badge badge-national" style="display:inline-flex;align-items:center;gap:6px;">
-      {{ w.name_en }}
-      <form method="post" action="/sentences/{{ sentence.id }}/unlink-weakness/{{ w.id }}" style="display:inline;margin:0;">
-        <button type="submit" style="background:none;border:none;cursor:pointer;color:inherit;font-size:12px;padding:0;line-height:1;" title="Remove">×</button>
-      </form>
-    </span>
-    {% else %}
-    <span style="color:var(--muted);font-size:13px;">No weaknesses tagged yet.</span>
-    {% endfor %}
-  </div>
-  <form method="post" action="/sentences/{{ sentence.id }}/link-weakness">
-    <div class="form-row">
-      <div class="field">
-        <select name="weakness_id" required>
-          <option value="">— add weakness —</option>
-          {% for w in all_weaknesses %}
-          <option value="{{ w.id }}">[{{ w.category }}] {{ w.name_en }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <button type="submit" class="btn btn-sm btn-primary">Link</button>
-    </div>
-  </form>
-</div>
-
 <!-- ═══ EXPOSURES ═══ -->
 <div class="section-head">
   <h2>Exposures <span class="badge badge-local" style="margin-left:8px;">{{ exposures | length }}</span></h2>
@@ -82,6 +74,7 @@
       </form>
     </div>
   </div>
+  {{ weakness_tags("exposure", e.id, exp_weaknesses.get(e.id, [])) }}
   <form method="post" action="/sentences/{{ sentence.id }}/exposures/{{ e.id }}/edit" class="edit-form" id="e{{ e.id }}">
     <div class="form-row">
       <div class="field" style="flex:2;"><label>Title</label><input name="title" value="{{ e.title }}" required></div>
@@ -143,6 +136,7 @@
       </form>
     </div>
   </div>
+  {{ weakness_tags("resolution", r.id, res_weaknesses.get(r.id, [])) }}
   <form method="post" action="/sentences/{{ sentence.id }}/resolutions/{{ r.id }}/edit" class="edit-form" id="r{{ r.id }}">
     <div class="form-row">
       <div class="field" style="flex:2;"><label>Title</label><input name="title" value="{{ r.title }}" required></div>
@@ -195,6 +189,7 @@
       </form>
     </div>
   </div>
+  {{ weakness_tags("challenge", ch.id, cha_weaknesses.get(ch.id, [])) }}
   <form method="post" action="/sentences/{{ sentence.id }}/challenges/{{ ch.id }}/edit" class="edit-form" id="ch{{ ch.id }}">
     <div class="form-row">
       <div class="field" style="flex:2;"><label>Title</label><input name="title" value="{{ ch.title }}" required></div>
