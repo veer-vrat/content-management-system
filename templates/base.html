@@ -7,8 +7,12 @@
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+<button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+  <span></span><span></span><span></span>
+</button>
+<div class="nav-backdrop" id="navBackdrop"></div>
 <div class="app">
-  <nav>
+  <nav id="mainNav">
     <div class="brand">
       <small>Veervrat</small>
       Content CMS
@@ -27,5 +31,13 @@
     {% block content %}{% endblock %}
   </main>
 </div>
+<script>
+  const toggle = document.getElementById('navToggle');
+  const backdrop = document.getElementById('navBackdrop');
+  function closeNav() { document.body.classList.remove('nav-open'); }
+  toggle.addEventListener('click', () => document.body.classList.toggle('nav-open'));
+  backdrop.addEventListener('click', closeNav);
+  document.querySelectorAll('#mainNav a').forEach(a => a.addEventListener('click', closeNav));
+</script>
 </body>
 </html>
